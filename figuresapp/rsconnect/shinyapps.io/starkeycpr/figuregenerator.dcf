@@ -1,0 +1,10 @@
+name: figuregenerator
+account: starkeycpr
+server: shinyapps.io
+appId: 82789
+bundleId: 369333
+url: https://starkeycpr.shinyapps.io/figuregenerator/
+when: 1455033567.83781
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: question1.wmf
