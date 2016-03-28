@@ -153,31 +153,31 @@ audioarea<-function()
   fn<-as.character(readline('Enter file name containing audiograms>>'))
   audios<-read.csv(fn)
   attach(audios)
-
+  
   cols<-ncol(audios)
   rows<-nrow(audios)
-
+  
   freqs<-as.numeric(audios[1,2:cols])
   freqs2<-as.numeric(freqs^2)
-
-
+  
+  
   mat<-matrix(data=NA,nrow=(rows-1),ncol=3)
   colnames(mat)<-c('Subject','Ear','Area')
-
+  
   for(i in 1:(rows-1))
   {
     thresh<-as.numeric(audios[i+1,2:cols])
-
+    
     model<-lm(thresh~freqs+freqs2)
-
+    
     integrand<-function(x)
     {model$coefficients[1]+(model$coefficients[2]*x)+(model$coefficients[3]*(x^2))}
-
+    
     area<-integrate(integrand,250,8000)
-
+    
     mat[i,1]<-as.character(audios[i+1,1])
     mat[i,3]<-area$value
-
+    
     if(((rows-1)-i)/(rows-1)>=0.5)
     {
       mat[i,2]<-'Right'
@@ -187,9 +187,73 @@ audioarea<-function()
       mat[i,2]<-'Left'
     }
   }
-
+  
   write.csv(mat,file='area.csv',row.names=FALSE)
+  
+}
 
+#logical fxn.  returns true if x is within +/- z of y
+wthin<-function(x,y,z)
+{
+  lwr<-(x-z)
+  upr<-(x+z)
+  if(y<=upr&y>=lwr)
+  {
+    return(TRUE)
+  }
+  else
+  {
+    return(FALSE)
+  }
+}
+
+#takes audios from 2 csvs and returns matrix of all audios that are matched.
+matchfinder<-function(){
+  nr1<-nrow(data1)
+  nr2<-nrow(data2)
+  nc1<-(ncol(data1))
+  m<-matrix(data=NA,nrow=(nr1*nr2),ncol=2)
+  colnames(m)<-c('SubID Data1','SubID Data2')
+  r<-1
+  
+  wthin<-function(x,y,z)
+  {
+    lwr<-(x-z)
+    upr<-(x+z)
+    if(y<=upr&y>=lwr)
+    {
+      return(TRUE)
+    }
+    else
+    {
+      return(FALSE)
+    }
+  }
+  
+  for(i in 1:nr1)
+  {
+    for(k in 1:nr2)
+    {
+      p<-0
+      for(j in 2:(nc1))
+      {
+        if(wthin(as.numeric(data1[i,j]),as.numeric(data2[k,j]),5))
+        {
+          p<-p+1
+        }
+      }
+      if(p==(nc1-1))
+      {
+        if((as.character(data1[i,1])!=(as.character(data2[k,1]))))
+        {
+          m[r,1]<-as.character(data1[i,1])
+          m[r,2]<-as.character(data2[k,1])
+          r<-r+1
+        }
+      }
+    }
+  }
+  return(na.exclude(m))
 }
 
 ##FOLLOWING ARE PART OF SOURCE CODE FOR FIGURE GENERATOR
@@ -201,19 +265,19 @@ ymax<-function(x){
   if(max(x)>40){
     response<-mround(max(x),10)
   }else{
-  if(max(x)>20){
-    response<-mround(max(x),5)
-  }else{
-  if(max(x)>14){
-    response<-20
-  }else{if(max(x)>10){
-    response<-14
-  }else{if(max(x)>5){
-    response<-10
-  }else{response<-5}
-  }
-  }
-  }
+    if(max(x)>20){
+      response<-mround(max(x),5)
+    }else{
+      if(max(x)>14){
+        response<-20
+      }else{if(max(x)>10){
+        response<-14
+      }else{if(max(x)>5){
+        response<-10
+      }else{response<-5}
+      }
+      }
+    }
   }
   return(response)}
 
@@ -436,192 +500,4 @@ FUNCTIONNAME<-function(x){
     }
   }
   return(response)}
-
-
-###WORKSPACE
-
-
-randomize<-function(w='Number of items in comparison',x='Number compared in each trial',y='Number of trials per comparison'){
-  u<-(((choose(w,x)))*y)
-  t<-choose(w,x)
-  s<-(x*t)
-  mat<-matrix(data=NA,nrow=u)
-  for(i in 1:t){
-    for(n in 1:u){
-    mat[n,]<-sample(1:w,x,replace=FALSE)
-  }
-  }
-return(mat)}
-
-
-comparison<-function(){
-  x<-as.numeric(readline('Type 1 for answers on a Likert scale or Very Easy...Very Difficult scale, and type 2 for ten point scales>>'))
-  if(x==1){
-  a<-as.numeric(readline(prompt='Number of Very Good/Very Easy in first study>>'))
-  b<-as.numeric(readline(prompt='Number of Good/Easy in first study>>'))
-  c<-as.numeric(readline(prompt='Number of Okay in first study>>'))
-  d<-as.numeric(readline(prompt='Number of Poor/Difficult in first study>>'))
-  e<-as.numeric(readline(prompt='Number of Very Poor/Very Difficult in first study>>'))
-  f<-as.numeric(readline(prompt='Number of Very Good/Very Easy in second study>>'))
-  g<-as.numeric(readline(prompt='Number of Good/Easy in second study>>'))
-  h<-as.numeric(readline(prompt='Number of Okay in second study>>'))
-  i<-as.numeric(readline(prompt='Number of Poor/Difficult in second study>>'))
-  j<-as.numeric(readline(prompt='Number of Very Poor/Very Difficult in second study>>'))
-
-  N1<-(a+b+c+d+e)
-  N2<-(f+g+h+i+j)
-
-  m1<-matrix(data=NA,ncol=N1,nrow=1)
-  m2<-matrix(data=NA,ncol=N2,nrow=1)
-
-  for(k in 1:a){
-    m1[,k]<-5
-  }
-  for(l in 1:b){
-    m1[,(a+l)]<-4
-  }
-  for(m in 1:c){
-    m1[,(a+b+m)]<-3
-  }
-  for(n in 1:d){
-    m1[,(a+b+c+n)]<-2
-  }
-  for(o in 1:e){
-    m1[,(a+b+c+d+o)]<-1
-  }
-  for(p in 1:f){
-    m2[,p]<-5
-  }
-  for(q in 1:g){
-    m2[,(f+q)]<-4
-  }
-  for(r in 1:h){
-    m2[,(f+g+r)]<-3
-  }
-  for(s in 1:i){
-    m2[,(f+g+h+s)]<-2
-  }
-  for(t in 1:j){
-    m2[,(f+g+h+i+t)]<-1
-  }
-
-  mat1<-m1
-  mat2<-m2
-  rownames(mat1)<-'First study'
-  rownames(mat2)<-'Second study'
-
-  print(mat1)
-  print(mat2)
-
-  num1<-as.numeric(m1)
-  num2<-as.numeric(m2)
-
-  return(t.test(num1,num2))
-  }else{
-    a<-as.numeric(readline(prompt='Number of 1 in first study>>'))
-    b<-as.numeric(readline(prompt='Number of 2 in first study>>'))
-    c<-as.numeric(readline(prompt='Number of 3 in first study>>'))
-    d<-as.numeric(readline(prompt='Number of 4 in first study>>'))
-    e<-as.numeric(readline(prompt='Number of 5 in first study>>'))
-    f<-as.numeric(readline(prompt='Number of 6 in first study>>'))
-    g<-as.numeric(readline(prompt='Number of 7 in first study>>'))
-    h<-as.numeric(readline(prompt='Number of 8 in first study>>'))
-    i<-as.numeric(readline(prompt='Number of 9 in first study>>'))
-    j<-as.numeric(readline(prompt='Number of 10 in first study>>'))
-    k<-as.numeric(readline(prompt='Number of 1 in first study>>'))
-    l<-as.numeric(readline(prompt='Number of 2 in first study>>'))
-    m<-as.numeric(readline(prompt='Number of 3 in first study>>'))
-    n<-as.numeric(readline(prompt='Number of 4 in first study>>'))
-    o<-as.numeric(readline(prompt='Number of 5 in first study>>'))
-    p<-as.numeric(readline(prompt='Number of 6 in first study>>'))
-    q<-as.numeric(readline(prompt='Number of 7 in first study>>'))
-    r<-as.numeric(readline(prompt='Number of 8 in first study>>'))
-    s<-as.numeric(readline(prompt='Number of 9 in first study>>'))
-    t<-as.numeric(readline(prompt='Number of 10 in first study>>'))
-
-    N1<-(a+b+c+d+e+f+g+h+i+j)
-    N2<-(k+l+m+n+o+p+q+r+s+t)
-
-    m1<-matrix(data=NA,ncol=N1,nrow=1)
-    m2<-matrix(data=NA,ncol=N2,nrow=1)
-
-    for(u in 1:a){
-      m1[,u]<-1
-    }
-    for(u in 1:b){
-      m1[,(a+u)]<-2
-    }
-    for(u in 1:c){
-      m1[,(a+b+u)]<-3
-    }
-    for(u in 1:d){
-      m1[,(a+b+c+u)]<-4
-    }
-    for(u in 1:e){
-      m1[,(a+b+c+d+u)]<-5
-    }
-    for(u in 1:f){
-      m1[,(a+b+c+d+e+u)]<-6
-    }
-    for(u in 1:g){
-      m1[,(a+b+c+d+e+f+u)]<-7
-    }
-    for(u in 1:h){
-      m1[,(a+b+c+d+e+f+g+u)]<-8
-    }
-    for(u in 1:i){
-      m1[,(a+b+c+d+e+f+g+h+u)]<-9
-    }
-    for(u in 1:j){
-      m1[,(a+b+c+d+e+f+g+h+i+u)]<-10
-    }
-    for(u in 1:k){
-      m2[,u]<-1
-    }
-    for(u in 1:l){
-      m2[,(k+u)]<-2
-    }
-    for(u in 1:m){
-      m2[,(k+l+u)]<-3
-    }
-    for(u in 1:n){
-      m2[,(k+l+m+u)]<-4
-    }
-    for(u in 1:o){
-      m2[,(k+l+m+n+u)]<-5
-    }
-    for(u in 1:p){
-      m2[,(k+l+m+n+o+u)]<-6
-    }
-    for(u in 1:q){
-      m2[,(k+l+m+n+o+p+u)]<-7
-    }
-    for(u in 1:r){
-      m2[,(k+l+m+n+o+p+q+u)]<-8
-    }
-    for(u in 1:s){
-      m2[,(k+l+m+n+o+p+q+r+u)]<-9
-    }
-    for(u in 1:t){
-      m2[,(k+l+m+n+o+p+q+r+s+u)]<-10
-    }
-
-    mat1<-m1
-    mat2<-m2
-    rownames(mat1)<-'First study'
-    rownames(mat2)<-'Second study'
-
-    print(mat1)
-    print(mat2)
-
-    num1<-as.numeric(m1)
-    num2<-as.numeric(m2)
-
-    return(t.test(num1,num2))
-  }
-}
-
-comparison()
-
-newvar<-c(1:10)
 
